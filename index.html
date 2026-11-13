@@ -75,6 +75,7 @@ body.light #status{background:rgba(255,255,255,.8);color:#555}
 .sw.on{background:var(--accent)} .sw.on::after{left:21px}
 .sw.mix{background:#2a7aa3}
 .mini{height:30px;font-size:12px;padding:0 10px}
+input.num{flex:1;min-width:70px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--bg);padding:0 10px;font-size:16px;-webkit-user-select:text;user-select:text}
 input[type=search]{width:100%;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--bg);padding:0 10px;margin:4px 0 6px}
 .fr{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid var(--line);font-size:14px}
 .fr label{width:76px;color:var(--sub);flex:none}
@@ -98,7 +99,7 @@ input[type=search]{width:100%;height:36px;border-radius:10px;border:1px solid va
 #busy{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;font-size:14px}
 .spin{width:38px;height:38px;border-radius:50%;border:4px solid rgba(255,255,255,.2);border-top-color:var(--accent);animation:sp 0.8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
-#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--sb) + 80px);background:#000c;color:#fff;padding:9px 14px;border-radius:12px;
+#toast{position:fixed;left:50%;transform:translateX(-50%);top:calc(var(--st) + 96px);background:#000c;color:#fff;padding:9px 14px;border-radius:12px;
   font-size:13px;z-index:50;display:none;max-width:90%;text-align:center;line-height:1.5}
 #fileIn{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
 .selv{height:34px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);padding:0 8px;max-width:150px}
@@ -129,8 +130,8 @@ input[type=search]{width:100%;height:36px;border-radius:10px;border:1px solid va
         <button class="btn" id="rUndo">1点戻す</button>
         <button class="btn" id="rDone" style="display:none">確定</button>
         <button class="btn" id="rCopy">コピー</button>
-        <button class="btn" id="rHist">履歴</button>
-        <button class="btn" id="rClear">消去</button>
+        <button class="btn" id="rHist">一覧</button>
+        <button class="btn" id="rClear">全削除</button>
       </div>
     </div>
     <div id="welcome">
@@ -152,6 +153,7 @@ input[type=search]{width:100%;height:36px;border-radius:10px;border:1px solid va
     <button class="tool" data-tool="info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>属性</button>
     <button class="tool" data-act="fit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>全体</button>
     <button class="tool" data-act="snap" id="snapBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="8" height="8"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg><span>吸着ON</span></button>
+    <button class="tool" data-act="scale"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 8h20v8H2z"/><path d="M6 8v3M10 8v4M14 8v3M18 8v4"/></svg>縮尺</button>
     <button class="tool" data-act="bg" id="bgBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg><span>背景</span></button>
   </footer>
 </div>
@@ -172,9 +174,24 @@ input[type=search]{width:100%;height:36px;border-radius:10px;border:1px solid va
     <div class="fr"><label>色</label><div class="seg" data-k="color"><button data-v="color" class="on">カラー</button><button data-v="mono">白黒</button></div></div>
     <div class="fr"><label>線の太さ</label><div class="seg" data-k="weight"><button data-v="thin">細線</button><button data-v="real" class="on">図面どおり</button></div></div>
     <div class="fr"><label>方式</label><div class="seg" data-k="mode"><button data-v="vector" class="on">ベクター（高精細）</button><button data-v="raster">画像</button></div></div>
-    <div class="fr"><label>計測線</label><div class="seg" data-k="meas"><button data-v="no" class="on">含めない</button><button data-v="yes">含める</button></div></div>
+    <div class="fr"><label>計測線</label><div class="seg" data-k="meas"><button data-v="yes" class="on">含める</button><button data-v="no">含めない</button></div></div>
     <p class="note">非表示にしたレイヤは出力されません。「ベクター」は線・文字を拡大しても劣化しません。文字が正しく表示されないPDFビューアでは「画像」を選んでください。</p>
     <button class="btn primary" id="pdfGo" style="width:100%;height:46px;margin-top:6px">PDFを作成して保存</button>
+  </div>
+</div>
+<div class="sheet" id="scaleSheet">
+  <div class="hd"><h2>縮尺の補正</h2><button class="btn mini" data-close>閉じる</button></div>
+  <div class="bd">
+    <div class="note" id="scaleNow"></div>
+    <div class="fr" id="calibRow" style="display:none;flex-wrap:wrap;background:rgba(76,194,255,.08);border-radius:10px;padding:10px">
+      <div class="note" id="calibInfo" style="width:100%;padding:0 0 6px"></div>
+      <label>実際の長さ</label><input type="number" inputmode="decimal" id="calibLen" class="num" placeholder="例：3640"><span>mm</span>
+      <button class="btn primary mini" id="calibApply">適用</button>
+    </div>
+    <div class="fr"><label>縮尺を入力</label><span>1 /</span><input type="number" inputmode="decimal" id="scaleN" class="num" placeholder="例：100"><button class="btn primary mini" id="scaleApply">適用</button></div>
+    <div class="fr"><label>2点で指定</label><button class="btn mini" id="calibStart" style="flex:1">図面上で長さの分かる2点を指定</button></div>
+    <button class="btn" id="scaleReset" style="width:100%;margin-top:10px">図面の縮尺に戻す</button>
+    <p class="note">「2点で指定」は、寸法線の両端や柱芯など実際の長さが分かる2点をタップし、その実寸（mm）を入力します。補正後は距離・連続・面積とPDFのラベルすべてに反映されます。別の図面を開くと補正は解除されます。</p>
   </div>
 </div>
 <div class="sheet" id="infoSheet">
@@ -207,7 +224,8 @@ const S = {
   bg: "dark", // 表示背景
   batches: null, fills: null, texts: null, dots: null, clips: null,
   snapIdx: null, defPlacement: null, unitMM: 1,
-  meas: { pts: [], closed: false }, aim: null, history: [],
+  meas: { pts: [], closed: false }, aim: null,
+  saved: [], mid: 0, mno: 0, showSaved: true, calib: null, calibPts: null, prevTool: null, flash: null, statusBase: "",
   selected: null, viewId: null,
 };
 
@@ -276,6 +294,7 @@ async function loadScene() {
   document.body.classList.toggle("light", S.bg === "light");
   S.unitMM = unitToMM(scene.unit);
   S.meas = { pts: [], closed: false }; S.selected = null; S.snapIdx = null;
+  S.saved = []; S.mno = 0; S.calib = null; S.calibPts = null;
   colorCache.clear();
   buildBatches();
   computeDefaultPlacement();
@@ -299,7 +318,7 @@ async function loadScene() {
   if (meta.scale) parts.push(meta.scale);
   if (meta.units) parts.push("単位 " + meta.units);
   parts.push("要素 " + scene.entities.length.toLocaleString());
-  $("#status").textContent = parts.join(" ・ ");
+  S.statusBase = parts.join(" ・ "); updateStatus();
   renderLayerList();
   resize(); fit(); busy(false);
   const warn = (scene.notices || []).filter(n => n.level === "warning");
@@ -536,8 +555,39 @@ function drawTexts(c, v, dpr, vb, bg, mono, minPx) {
 
 // ================= 計測オーバーレイ =================
 const MCOL = "#ff3db4";
+function pillLabel(c, x, y, text, fs, bg, fg) {
+  c.font = `600 ${fs}px -apple-system, "Hiragino Sans", sans-serif`; c.textAlign = "center"; c.textBaseline = "middle";
+  const tw = c.measureText(text).width + fs * 0.8, th = fs * 1.6;
+  c.fillStyle = bg; roundRect(c, x - tw / 2, y - th / 2, tw, th, th * 0.3); c.fill();
+  c.fillStyle = fg; c.fillText(text, x, y + fs * 0.04);
+}
+/** 残した計測を描く（v：ワールド→キャンバス座標） */
+function drawSavedMeasures(c, v, o = {}) {
+  if (!S.showSaved && !o.force) return;
+  const fs = o.fs || 12, lw = o.lw || 1.8;
+  for (const m of S.saved) {
+    const sm = summarize(m.tool, m.pts); if (!sm) continue;
+    const sp = m.pts.map(p => toScreen(p.x, p.y, v));
+    const flash = S.flash === m.id;
+    const col = flash ? "#ffb000" : (o.color || "#ff7a1a");
+    c.setLineDash([]);
+    if (m.tool === "area") { c.fillStyle = flash ? "rgba(255,176,0,.25)" : "rgba(255,122,26,.13)"; c.beginPath(); sp.forEach((p, i) => i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y)); c.closePath(); c.fill(); }
+    c.strokeStyle = col; c.lineWidth = flash ? lw * 2 : lw;
+    c.beginPath(); sp.forEach((p, i) => i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y)); if (m.tool === "area") c.closePath(); c.stroke();
+    c.fillStyle = col; for (const p of sp) { c.beginPath(); c.arc(p.x, p.y, lw * 1.7, 0, Math.PI * 2); c.fill(); }
+    if (m.tool === "chain") {
+      for (let i = 1; i < m.pts.length; i++) {
+        const a = sp[i - 1], b = sp[i]; if (Math.hypot(b.x - a.x, b.y - a.y) < fs * 5) continue;
+        pillLabel(c, (a.x + b.x) / 2, (a.y + b.y) / 2, fmtLen(realDist(m.pts[i - 1], m.pts[i]).real), fs * 0.85, "rgba(0,0,0,.6)", "#fff");
+      }
+    }
+    const lp = savedLabelPos(m), q = toScreen(lp.x, lp.y, v);
+    pillLabel(c, q.x, q.y - (m.tool === "chain" ? fs * 1.4 : 0), `[${m.no}] ${sm.label}`, fs, col, "#fff");
+  }
+}
 function drawOverlay(c) {
   c.save(); c.setTransform(DPR, 0, 0, DPR, 0, 0);
+  drawSavedMeasures(c, S.view);
   const pts = S.meas.pts.slice();
   if (S.aim && S.aim.pt && isMeasureTool()) pts.push(S.aim.pt);
   if (pts.length) {
@@ -682,7 +732,10 @@ function snapAt(sx, sy) {
 }
 
 // ================= 実寸換算 =================
+/** 手動縮尺（mm / 図面座標1単位）。null なら図面の縮尺を使う */
+function calibF() { return S.calib ? S.calib.F : null; }
 function toRealPt(p, pl) {
+  const F = calibF(); if (F) return [p.x * F, p.y * F];
   if (pl) { const m = pl.inverse; return [m[0] * p.x + m[2] * p.y + m[4], m[1] * p.x + m[3] * p.y + m[5]]; }
   return [p.x * S.unitMM, p.y * S.unitMM];
 }
@@ -690,6 +743,8 @@ function plOf(p) { return (p.e && p.e.placement) || S.defPlacement || null; }
 /** 2点間の実寸（mm） */
 function realDist(a, b) {
   const paperD = Math.hypot(b.x - a.x, b.y - a.y);
+  const F = calibF();
+  if (F) return { real: paperD * F, paper: S.paperCoords ? paperD : null, pl: null };
   let pa = plOf(a), pb = plOf(b);
   if (pa && pb && (Math.abs(pa.scaleX - pb.scaleX) > 1e-12)) pb = pa; // 縮尺が違えば始点側を優先
   const pl = pa || pb;
@@ -710,66 +765,177 @@ function scaleLabel(pl) {
   const k = 1 / pl.scaleX; return k > 0 ? "1/" + (Math.round(k * 100) / 100) : "";
 }
 
-function measureSummary() {
-  const pts = S.meas.pts;
-  if (!pts.length) return null;
-  if (S.tool === "dist") {
-    if (pts.length < 2) return { main: "終点をタップ", sub: "始点を置きました" };
+function scaleText(pl) {
+  if (S.calib) return "手動 " + S.calib.label;
+  return pl ? scaleLabel(pl) : "";
+}
+/** 計測内容の集計（tool と点列から） */
+function summarize(tool, pts) {
+  if (!pts || !pts.length) return null;
+  if (tool === "dist" || tool === "calib") {
+    if (pts.length < 2) return { main: "終点をタップ", sub: tool === "calib" ? "基準の始点を置きました" : "始点を置きました" };
     const d = realDist(pts[0], pts[1]);
-    const dx = Math.abs(toRealPt(pts[1], d.pl)[0] - toRealPt(pts[0], d.pl)[0]), dy = Math.abs(toRealPt(pts[1], d.pl)[1] - toRealPt(pts[0], d.pl)[1]);
-    const sub = [`ΔX ${fmtLen(dx)}　ΔY ${fmtLen(dy)}`];
+    const r0 = toRealPt(pts[0], d.pl), r1 = toRealPt(pts[1], d.pl);
+    const sub = [`ΔX ${fmtLen(Math.abs(r1[0] - r0[0]))}　ΔY ${fmtLen(Math.abs(r1[1] - r0[1]))}`];
     if (d.paper != null) sub.push(`図面上 ${fmtNum(d.paper, 2)} mm`);
-    if (d.pl) sub.push(`縮尺 ${scaleLabel(d.pl)}`);
-    return { main: fmtLen(d.real), sub: sub.join("　"), copy: fmtNum(d.real, 1), kind: "距離" };
+    const st = scaleText(d.pl); if (st) sub.push(`縮尺 ${st}`);
+    return { main: fmtLen(d.real), sub: sub.join("　"), copy: fmtNum(d.real, 1), kind: "距離", label: fmtLen(d.real), done: true };
   }
-  if (S.tool === "chain") {
+  if (tool === "chain") {
     let tot = 0; for (let i = 1; i < pts.length; i++) tot += realDist(pts[i - 1], pts[i]).real;
-    const pl = plOf(pts[0]);
-    return { main: pts.length < 2 ? "次の点をタップ" : fmtLen(tot), sub: `${Math.max(0, pts.length - 1)} 区間　合計 ${fmtNum(tot / 1000, 3)} m` + (pl ? `　縮尺 ${scaleLabel(pl)}` : ""), copy: fmtNum(tot, 1), kind: "連続" };
+    const st = scaleText(plOf(pts[0]));
+    return { main: pts.length < 2 ? "次の点をタップ" : fmtLen(tot), sub: `${Math.max(0, pts.length - 1)} 区間　合計 ${fmtNum(tot / 1000, 3)} m` + (st ? `　縮尺 ${st}` : ""), copy: fmtNum(tot, 1), kind: "連続", label: "計 " + fmtLen(tot), done: pts.length >= 2 };
   }
-  if (S.tool === "area") {
+  if (tool === "area") {
     if (pts.length < 3) return { main: "3点以上タップ", sub: `${pts.length} 点` };
     const pl = plOf(pts[0]);
     const rp = pts.map(p => toRealPt(p, pl));
     let a = 0, per = 0;
     for (let i = 0; i < rp.length; i++) { const p = rp[i], q = rp[(i + 1) % rp.length]; a += p[0] * q[1] - q[0] * p[1]; per += Math.hypot(q[0] - p[0], q[1] - p[1]); }
     a = Math.abs(a) / 2 / 1e6;
-    return { main: fmtNum(a, 3) + " m²", sub: `周長 ${fmtNum(per / 1000, 3)} m　${pts.length} 点` + (pl ? `　縮尺 ${scaleLabel(pl)}` : "") + `　（${fmtNum(a / 3.305785, 2)} 坪）`, copy: fmtNum(a, 3), kind: "面積" };
+    const st = scaleText(pl);
+    return { main: fmtNum(a, 3) + " m²", sub: `周長 ${fmtNum(per / 1000, 3)} m　${pts.length} 点` + (st ? `　縮尺 ${st}` : "") + `　（${fmtNum(a / 3.305785, 2)} 坪）`, copy: fmtNum(a, 3), kind: "面積", label: fmtNum(a, 3) + " m²", done: true };
   }
   return null;
 }
-function updateResult() {
-  const r = $("#result"); const sm = isMeasureTool() ? measureSummary() : null;
-  if (!sm) { r.style.display = "none"; return; }
-  r.style.display = "block"; $("#rMain").textContent = sm.main; $("#rSub").textContent = sm.sub || "";
-  $("#rDone").style.display = (S.tool === "chain" || S.tool === "area") && S.meas.pts.length >= 2 ? "" : "none";
+function measureSummary() { return summarize(S.tool, S.meas.pts); }
+/** 保存済み計測のラベル位置（ワールド座標） */
+function savedLabelPos(m) {
+  const p = m.pts;
+  if (m.tool === "area") { let x = 0, y = 0; p.forEach(q => { x += q.x; y += q.y; }); return { x: x / p.length, y: y / p.length }; }
+  if (m.tool === "dist") return { x: (p[0].x + p[1].x) / 2, y: (p[0].y + p[1].y) / 2 };
+  return { x: p[p.length - 1].x, y: p[p.length - 1].y };
 }
-function pushHistory() {
-  const sm = measureSummary(); if (!sm || !sm.kind) return;
-  if ((S.tool === "dist" && S.meas.pts.length < 2) || (S.tool === "area" && S.meas.pts.length < 3) || (S.tool === "chain" && S.meas.pts.length < 2)) return;
-  S.history.unshift({ kind: sm.kind, main: sm.main, sub: sm.sub, pts: S.meas.pts.slice(), tool: S.tool });
-  if (S.history.length > 50) S.history.pop();
+function lastSaved() { return S.saved.length ? S.saved[S.saved.length - 1] : null; }
+function updateResult() {
+  const r = $("#result");
+  if (!isMeasureTool()) { r.style.display = "none"; return; }
+  let sm = measureSummary(), prefix = "";
+  const live = !!sm;
+  if (!sm && S.tool !== "calib") { const ls = lastSaved(); if (ls) { sm = summarize(ls.tool, ls.pts); prefix = `[${ls.no}] `; } }
+  if (!sm) { r.style.display = "none"; return; }
+  r.style.display = "block"; $("#rMain").textContent = prefix + sm.main;
+  $("#rSub").textContent = (sm.sub || "") + (!live ? "　— 次の計測を始められます" : "");
+  $("#rDone").style.display = live && (S.tool === "chain" || S.tool === "area") && S.meas.pts.length >= (S.tool === "area" ? 3 : 2) ? "" : "none";
+  $("#rUndo").textContent = live ? "1点戻す" : "直前を削除";
+  if (!$("#rClear").dataset.arm) $("#rClear").textContent = live ? "やり直し" : "全削除";
+  $("#rUndo").style.display = S.tool === "calib" && !live ? "none" : "";
+}
+/** 現在の計測を保存（画面に残す） */
+function saveCurrent() {
+  const sm = measureSummary(); if (!sm || !sm.done) return false;
+  S.saved.push({ id: ++S.mid, no: ++S.mno, tool: S.tool, pts: S.meas.pts.slice() });
+  S.meas.pts = [];
+  return true;
 }
 function addMeasurePoint(pt) {
-  if (S.tool === "dist" && S.meas.pts.length >= 2) S.meas.pts = [];
   S.meas.pts.push({ x: pt.x, y: pt.y, e: pt.e, snap: pt.snap });
-  if (S.tool === "dist" && S.meas.pts.length === 2) pushHistory();
+  if (S.tool === "dist" && S.meas.pts.length === 2) saveCurrent();
+  if (S.tool === "calib" && S.meas.pts.length === 2) { S.calibPts = S.meas.pts.slice(); S.meas.pts = []; openCalibInput(); }
   updateResult(); draw();
 }
-$("#rUndo").onclick = () => { S.meas.pts.pop(); updateResult(); draw(); };
-$("#rClear").onclick = () => { S.meas.pts = []; updateResult(); draw(); };
-$("#rDone").onclick = () => { pushHistory(); toast("履歴に記録しました：" + ($("#rMain").textContent)); S.meas.pts = []; updateResult(); draw(); };
+function deleteSaved(id) { S.saved = S.saved.filter(m => m.id !== id); updateResult(); draw(); }
+$("#rUndo").onclick = () => {
+  if (S.meas.pts.length) S.meas.pts.pop();
+  else { const ls = lastSaved(); if (ls) { deleteSaved(ls.id); toast(`[${ls.no}] を削除しました`); } }
+  updateResult(); draw();
+};
+$("#rClear").onclick = () => {
+  const b = $("#rClear");
+  if (S.meas.pts.length) { S.meas.pts = []; updateResult(); draw(); return; }
+  if (!S.saved.length) return;
+  if (b.dataset.arm) { S.saved = []; delete b.dataset.arm; b.textContent = "全削除"; toast("計測をすべて削除しました"); updateResult(); draw(); return; }
+  b.dataset.arm = "1"; b.textContent = "もう一度で全削除";
+  setTimeout(() => { delete b.dataset.arm; b.textContent = "全削除"; }, 3000);
+};
+$("#rDone").onclick = () => { if (saveCurrent()) toast("計測を残しました"); updateResult(); draw(); };
 $("#rCopy").onclick = async () => {
-  const sm = measureSummary(); if (!sm) return;
+  let sm = measureSummary(); if (!sm) { const ls = lastSaved(); if (ls) sm = summarize(ls.tool, ls.pts); }
+  if (!sm) return;
   const txt = sm.main + (sm.sub ? "（" + sm.sub + "）" : "");
   try { await navigator.clipboard.writeText(txt); toast("コピーしました"); } catch { toast(txt, 5000); }
 };
-$("#rHist").onclick = () => {
-  if (!S.history.length) { toast("履歴はまだありません"); return; }
-  infoShow("計測の履歴", S.history.map((h, i) => `<div class="hist"><span class="t">${esc(h.kind)}</span><div><b>${esc(h.main)}</b><div class="note" style="padding:0">${esc(h.sub || "")}</div></div></div>`).join("") +
-    `<button class="btn" style="margin-top:10px;width:100%" id="histCopy">すべてコピー</button>`);
-  $("#histCopy").onclick = async () => { const t = S.history.map(h => `${h.kind}\t${h.main}\t${h.sub || ""}`).join("\n"); try { await navigator.clipboard.writeText(t); toast("コピーしました"); } catch { toast("コピーできませんでした"); } };
+$("#rHist").onclick = () => showSavedList();
+function showSavedList() {
+  if (!S.saved.length) { infoShow("計測一覧", `<div class="note">残っている計測はありません。距離は2点目で自動的に残り、連続・面積は「確定」で残ります。</div>`); return; }
+  const rows = S.saved.slice().reverse().map(m => {
+    const sm = summarize(m.tool, m.pts);
+    return `<div class="hist" data-id="${m.id}"><span class="t">[${m.no}]<br>${esc(sm.kind)}</span><div style="flex:1;min-width:0"><b>${esc(sm.main)}</b><div class="note" style="padding:0">${esc(sm.sub || "")}</div></div>
+      <div style="display:flex;flex-direction:column;gap:4px"><button class="btn mini" data-act="go">表示</button><button class="btn mini" data-act="del" style="color:var(--danger)">削除</button></div></div>`;
+  }).join("");
+  infoShow("計測一覧", `<div class="fr" style="gap:6px"><button class="btn mini" id="svShow">${S.showSaved ? "計測線を隠す" : "計測線を表示"}</button><button class="btn mini" id="svCopy">すべてコピー</button><button class="btn mini" id="svDel" style="color:var(--danger)">すべて削除</button></div>` + rows);
+  $("#infoBody").onclick = async (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.id === "svShow") { S.showSaved = !S.showSaved; draw(); showSavedList(); return; }
+    if (b.id === "svCopy") {
+      const t = S.saved.map(m => { const sm = summarize(m.tool, m.pts); return `[${m.no}]\t${sm.kind}\t${sm.main}\t${sm.sub || ""}`; }).join("\n");
+      try { await navigator.clipboard.writeText(t); toast("コピーしました"); } catch { toast("コピーできませんでした"); } return;
+    }
+    if (b.id === "svDel") {
+      if (b.dataset.arm) { S.saved = []; updateResult(); draw(); showSavedList(); toast("すべて削除しました"); return; }
+      b.dataset.arm = "1"; b.textContent = "もう一度で全削除"; setTimeout(() => { if (b.isConnected) { delete b.dataset.arm; b.textContent = "すべて削除"; } }, 3000); return;
+    }
+    const row = b.closest(".hist"); if (!row) return; const id = +row.dataset.id; const m = S.saved.find(x => x.id === id); if (!m) return;
+    if (b.dataset.act === "del") { deleteSaved(id); showSavedList(); }
+    if (b.dataset.act === "go") {
+      const xs = m.pts.map(p => p.x), ys = m.pts.map(p => p.y);
+      const bb = { minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) };
+      const pad = Math.max(bb.maxX - bb.minX, bb.maxY - bb.minY) * 0.6 + 1e-6;
+      closeSheets(); S.showSaved = true; S.flash = id; setTimeout(() => { S.flash = null; draw(); }, 1600);
+      fit({ minX: bb.minX - pad, maxX: bb.maxX + pad, minY: bb.minY - pad, maxY: bb.maxY + pad });
+    }
+  };
+}
+
+// ================= 縮尺の補正 =================
+function drawingScaleText() {
+  const pl = S.defPlacement;
+  if (pl) return "図面の縮尺：" + scaleLabel(pl);
+  return "図面の単位：" + (S.scene && S.scene.unit ? S.scene.unit : "不明") + "（1単位 = " + fmtNum(S.unitMM, S.unitMM < 1 ? 3 : 0) + " mm で換算）";
+}
+function refreshScaleSheet() {
+  $("#scaleNow").innerHTML = (S.calib ? `<b style="color:var(--accent2)">手動で補正中：${esc(S.calib.label)}</b>（${esc(S.calib.how)}）<br>` : `<b>補正なし</b>（図面の情報で換算）<br>`) + esc(drawingScaleText());
+  $("#scaleReset").style.display = S.calib ? "" : "none";
+}
+function setCalib(F, how) {
+  // 1/N 表記（用紙mm座標なら F=N、それ以外は 図面単位→mm を除いた値）
+  const N0 = F / (S.paperCoords ? 1 : S.unitMM);
+  const N = N0 >= 10 ? Math.round(N0 * 10) / 10 : Math.round(N0 * 1000) / 1000;
+  const nTxt = String(N);
+  S.calib = { F, label: "1/" + nTxt, how };
+  updateStatus(); updateResult(); draw(); refreshScaleSheet();
+  toast("縮尺を " + S.calib.label + " に補正しました");
+}
+$("#scaleApply").onclick = () => {
+  const v = String($("#scaleN").value).replace(/^\s*1\s*[\/:：]\s*/, "").trim();
+  const N = parseFloat(v);
+  if (!(N > 0)) { toast("縮尺の数値を入力してください（例：100）"); return; }
+  setCalib(N * (S.paperCoords ? 1 : S.unitMM), "縮尺を入力");
 };
+$("#calibStart").onclick = () => {
+  closeSheets(); S.prevTool = isMeasureTool() && S.tool !== "calib" ? S.tool : "dist";
+  setTool("calib");
+};
+function openCalibInput() {
+  const [a, b] = S.calibPts;
+  const d = realDist(a, b);
+  $("#calibInfo").textContent = `指定した2点：現在の換算で ${fmtLen(d.real)}` + (d.paper != null ? `（図面上 ${fmtNum(d.paper, 2)} mm）` : "");
+  $("#calibRow").style.display = "";
+  $("#calibLen").value = "";
+  refreshScaleSheet(); openSheet("scaleSheet");
+  setTimeout(() => { try { $("#calibLen").focus(); } catch { } }, 250);
+}
+$("#calibApply").onclick = () => {
+  const L = parseFloat(String($("#calibLen").value).replace(/,/g, ""));
+  if (!(L > 0) || !S.calibPts) { toast("実際の長さ（mm）を入力してください"); return; }
+  const [a, b] = S.calibPts; const w = Math.hypot(b.x - a.x, b.y - a.y);
+  if (!(w > 0)) { toast("2点が同じ位置です。指定し直してください"); return; }
+  setCalib(L / w, `基準2点＝${fmtNum(L, L % 1 ? 1 : 0)} mm`);
+  S.calibPts = null; $("#calibRow").style.display = "none";
+  closeSheets(); setTool(S.prevTool || "dist");
+};
+$("#scaleReset").onclick = () => { S.calib = null; updateStatus(); updateResult(); draw(); refreshScaleSheet(); toast("図面の縮尺に戻しました"); };
+function openScaleSheet() { $("#calibRow").style.display = S.calibPts ? "" : "none"; refreshScaleSheet(); openSheet("scaleSheet"); }
 
 // ================= 属性（選択） =================
 function pickEntity(sx, sy) {
@@ -807,7 +973,8 @@ function showEntity(e) {
 // ================= 入力（タッチ・マウス） =================
 const pointers = new Map();
 let gesture = null; // {type:'pan'|'pinch', ...}
-function isMeasureTool() { return S.tool === "dist" || S.tool === "chain" || S.tool === "area"; }
+function isMeasureTool() { return S.tool === "dist" || S.tool === "chain" || S.tool === "area" || S.tool === "calib"; }
+function updateStatus() { $("#status").textContent = S.statusBase + (S.calib ? " ・ 縮尺補正 " + S.calib.label : ""); }
 function localPt(ev) { const r = cv.getBoundingClientRect(); return { x: ev.clientX - r.left, y: ev.clientY - r.top }; }
 
 cv.addEventListener("pointerdown", ev => {
@@ -896,9 +1063,9 @@ window.addEventListener("keydown", e => {
 });
 
 // ================= ツール =================
-const HINTS = { dist: "2点をタップ（指を置くと拡大鏡）", chain: "点を順にタップ → 確定", area: "囲む点を順にタップ", info: "図形をタップすると属性を表示", pan: "" };
+const HINTS = { dist: "2点をタップ（指を置くと拡大鏡）", chain: "点を順にタップ → 確定", area: "囲む点を順にタップ", info: "図形をタップすると属性を表示", calib: "基準にする2点をタップ（寸法の端点など）", pan: "" };
 function setTool(t) {
-  if (S.tool !== t) { if (isMeasureTool() && S.meas.pts.length >= 2 && S.tool !== "dist") pushHistory(); S.meas.pts = []; }
+  if (S.tool !== t) { if ((S.tool === "chain" || S.tool === "area") && S.meas.pts.length) saveCurrent(); S.meas.pts = []; }
   S.tool = t; S.selected = null;
   $$(".tool[data-tool]").forEach(b => b.classList.toggle("on", b.dataset.tool === t));
   const h = $("#hint"); h.textContent = HINTS[t] || ""; h.style.display = HINTS[t] && S.scene ? "block" : "none";
@@ -909,6 +1076,7 @@ $$(".tool[data-tool]").forEach(b => b.onclick = () => setTool(b.dataset.tool));
 $$(".tool[data-act]").forEach(b => b.onclick = () => {
   const a = b.dataset.act;
   if (a === "fit") fit();
+  if (a === "scale") { if (!S.scene) return; openScaleSheet(); }
   if (a === "snap") { S.snapOn = !S.snapOn; $("#snapBtn span").textContent = S.snapOn ? "吸着ON" : "吸着OFF"; $("#snapBtn").classList.toggle("on", !S.snapOn); toast(S.snapOn ? "端点・中点・線上に吸着します" : "吸着を切りました（自由な位置を計測）"); }
   if (a === "bg") { S.bg = S.bg === "dark" ? "light" : "dark"; S.bgOverride = S.bg; document.body.classList.toggle("light", S.bg === "light"); draw(); }
 });
@@ -967,7 +1135,7 @@ $("#allOn").onclick = () => { S.hidden.clear(); renderLayerList(); draw(); };
 $("#allOff").onclick = () => { S.scene.layers.forEach(l => S.hidden.add(l.id)); renderLayerList(); draw(); };
 
 // ================= PDF 書き出し =================
-const PDFO = { range: "view", paper: "A3", orient: "auto", color: "color", weight: "real", mode: "vector", meas: "no" };
+const PDFO = { range: "view", paper: "A3", orient: "auto", color: "color", weight: "real", mode: "vector", meas: "yes" };
 $$("#pdfSheet .seg").forEach(seg => seg.addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
   $$("button", seg).forEach(x => x.classList.toggle("on", x === b)); PDFO[seg.dataset.k] = b.dataset.v;
@@ -1117,11 +1285,19 @@ function buildVectorPdf() {
 function isHalf(ch) { const c = ch.codePointAt(0); return c < 0x80 || (c >= 0xff61 && c <= 0xff9f); }
 function utf16hex(s) { let h = ""; for (let i = 0; i < s.length; i++) h += s.charCodeAt(i).toString(16).padStart(4, "0"); return h.toUpperCase(); }
 function pdfMeasure(out, X, Y, f, K) {
-  const pts = S.meas.pts; const lists = [];
-  if (pts.length >= 2) lists.push({ pts, area: S.tool === "area" });
-  for (const h of S.history) if (h.pts && h.pts.length >= 2 && !(pts.length && h.pts === pts)) lists.push({ pts: h.pts, area: h.tool === "area" });
-  out.push("0.9 0.1 0.6 RG [] 0 d " + f(0.35 * K) + " w");
-  for (const l of lists) { out.push(l.pts.map((p, i) => `${X(p.x)} ${Y(p.y)} ${i ? "l" : "m"}`).join(" ") + (l.area ? " h" : "") + " S"); }
+  out.push("1 0.48 0.1 RG [] 0 d " + f(0.35 * K) + " w");
+  const fs = 8; // pt
+  for (const m of S.saved) {
+    out.push(m.pts.map((p, i) => `${X(p.x)} ${Y(p.y)} ${i ? "l" : "m"}`).join(" ") + (m.tool === "area" ? " h" : "") + " S");
+  }
+  for (const m of S.saved) {
+    const sm = summarize(m.tool, m.pts); if (!sm) continue;
+    const t = `[${m.no}] ${sm.label}`;
+    const lp = savedLabelPos(m); const x = +X(lp.x), y = +Y(lp.y);
+    let w = 0; for (const ch of t) w += isHalf(ch) ? 0.5 : 1; w *= fs;
+    out.push(`1 0.48 0.1 rg ${f(x - w / 2 - 2)} ${f(y - fs * 0.5 - 1.5)} ${f(w + 4)} ${f(fs + 3)} re f`);
+    out.push(`BT 1 1 1 rg /F2 ${fs} Tf 1 0 0 1 ${f(x - w / 2)} ${f(y - fs * 0.36)} Tm <${utf16hex(t)}> Tj ET`);
+  }
 }
 
 async function buildRasterPdf() {
@@ -1136,11 +1312,7 @@ async function buildRasterPdf() {
   const v = { s: L.s * dpmm, tx: L.ox * dpmm, ty: ch - L.oy * dpmm };
   const savedHidden = S.hidden;
   renderScene(c, v, cw, ch, 1, { bg: "light", mono: PDFO.color === "mono", weight: PDFO.weight === "thin" ? "thin" : "screen", paperScale: S.paperCoords ? 1 : 1.2, minPx: 0.8, maxPx: 12, frame: false, minTextPx: 1.5, thinPx: 1.2 });
-  if (PDFO.meas === "yes") {
-    c.strokeStyle = "#e6199a"; c.lineWidth = 3;
-    const lists = []; if (S.meas.pts.length >= 2) lists.push({ pts: S.meas.pts, area: S.tool === "area" }); for (const h of S.history) lists.push({ pts: h.pts, area: h.tool === "area" });
-    for (const l of lists) { c.beginPath(); l.pts.forEach((p, i) => { const q = toScreen(p.x, p.y, v); i ? c.lineTo(q.x, q.y) : c.moveTo(q.x, q.y); }); if (l.area) c.closePath(); c.stroke(); }
-  }
+  if (PDFO.meas === "yes") drawSavedMeasures(c, v, { force: true, fs: Math.max(12, 2.6 * dpmm), lw: Math.max(2, 0.35 * dpmm) });
   // 余白マスク
   const mg = L.margin * dpmm; c.fillStyle = "#fff"; c.fillRect(0, 0, cw, mg); c.fillRect(0, ch - mg, cw, mg); c.fillRect(0, 0, mg, ch); c.fillRect(cw - mg, 0, mg, ch);
   const blob = await new Promise(r => oc.toBlob(r, "image/jpeg", 0.9));
@@ -1159,7 +1331,7 @@ function writePdf({ PW, PH, content, fonts, image }) {
   if (fonts) {
     const mk = (name, ord) => {
       const desc = add([`<< /Type /FontDescriptor /FontName /${name} /Flags 4 /FontBBox [-200 -331 1100 903] /ItalicAngle 0 /Ascent 880 /Descent -120 /CapHeight 700 /StemV 80 >>`]);
-      const cid = add([`<< /Type /Font /Subtype /CIDFontType0 /BaseFont /${name} /CIDSystemInfo << /Registry (Adobe) /Ordering (Japan1) /Supplement 2 >> /FontDescriptor ${desc} 0 R /DW 1000 >>`]);
+      const cid = add([`<< /Type /Font /Subtype /CIDFontType0 /BaseFont /${name} /CIDSystemInfo << /Registry (Adobe) /Ordering (Japan1) /Supplement 2 >> /FontDescriptor ${desc} 0 R /DW 1000 /W [231 632 500] >>`]);
       return add([`<< /Type /Font /Subtype /Type0 /BaseFont /${name}-${ord} /Encoding /${ord} /DescendantFonts [${cid} 0 R] >>`]);
     };
     const f1 = mk("HeiseiKakuGo-W5", "UniJIS-UCS2-H");
